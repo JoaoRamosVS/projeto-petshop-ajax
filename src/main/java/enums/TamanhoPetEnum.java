@@ -21,6 +21,15 @@ public enum TamanhoPetEnum {
     public String getDescricao() {
         return descricao;
     }
+    
+    public static TamanhoPetEnum fromId(int id) {
+        for (TamanhoPetEnum tamanho : TamanhoPetEnum.values()) {
+            if (tamanho.id == id) {
+                return tamanho;
+            }
+        }
+        return null; 
+    }
 
     @Override
     public String toString() {

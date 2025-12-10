@@ -93,7 +93,7 @@
     </form>
     
     <div class="register-link">
-        <p>Não tem conta? <a href="cadastro.jsp">Cadastre-se aqui</a></p>
+        <p>Não tem conta? <a href="cadastroInicial.jsp">Cadastre-se aqui</a></p>
     </div>
 </div>
 

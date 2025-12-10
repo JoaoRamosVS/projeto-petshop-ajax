@@ -1,11 +1,20 @@
 package controllers;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder; 
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonPrimitive; 
+import com.google.gson.JsonSerializer; 
+import com.google.gson.TypeAdapter; 
+import com.google.gson.stream.JsonReader; 
+import com.google.gson.stream.JsonWriter;
+
 import dao.TutorDAO;
 import dao.UsuarioDAO;
 import entities.Pet; 
 import entities.Tutor;
 import entities.Usuario;
+import enums.TamanhoPetEnum;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -15,6 +24,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,7 +33,10 @@ import java.util.stream.Collectors;
 public class TutorServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private TutorDAO tutorDAO = new TutorDAO();
-    private Gson gson = new Gson();
+    private Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .registerTypeAdapter(TamanhoPetEnum.class, new TamanhoPetEnumTypeAdapter()) // NOVO ADAPTADOR
+            .create();
 
     
     private static class CadastroDTO {
@@ -225,7 +239,7 @@ public class TutorServlet extends HttpServlet {
             boolean sucesso = tutorDAO.cadastrarTutorComPet(tutor, usuario, pet);
             
             if (sucesso) {
-                sendJsonResponse(response, new SuccessResponse("Tutor, Usuário e Pet cadastrados com sucesso (Transação)."));
+                sendJsonResponse(response, new SuccessResponse("Cadastro realizado com sucesso!"));
             } else {
                 sendErrorResponse(response, HttpServletResponse.SC_CONFLICT, "Falha ao cadastrar. O e-mail pode já estar em uso ou houve erro no banco de dados.");
             }
@@ -254,6 +268,72 @@ public class TutorServlet extends HttpServlet {
             }
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Formato JSON inválido ou dados incompletos para atualização: " + e.getMessage());
+        }
+    }
+    
+    private static class LocalDateAdapter extends TypeAdapter<LocalDate> {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        @Override
+        public void write(JsonWriter out, LocalDate value) throws IOException {
+            if (value == null) {
+                out.nullValue();
+            } else {
+                out.value(formatter.format(value));
+            }
+        }
+
+        @Override
+        public LocalDate read(JsonReader in) throws IOException {
+            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            return LocalDate.parse(in.nextString(), formatter);
+        }
+    }
+    
+    private static class TamanhoPetEnumTypeAdapter extends TypeAdapter<TamanhoPetEnum> {
+        @Override
+        public void write(JsonWriter out, TamanhoPetEnum value) throws IOException {
+            if (value == null) {
+                out.nullValue();
+                return;
+            }
+            // Serializa como objeto JSON, se for necessário em respostas GET
+            out.beginObject();
+            out.name("id").value(value.getId());
+            out.name("descricao").value(value.getDescricao());
+            out.endObject();
+        }
+
+        @Override
+        public TamanhoPetEnum read(JsonReader in) throws IOException {
+            // Deserializa o JSON {"id": X}
+            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            
+            // Lê o objeto JSON token a token
+            in.beginObject();
+            
+            // Espera o campo "id"
+            if (!in.nextName().equals("id")) {
+                throw new IOException("Esperado campo 'id' para TamanhoPetEnum.");
+            }
+            
+            // Lê o valor do ID
+            int id = in.nextInt(); 
+            
+            in.endObject();
+            
+            // Usa o método estático 'fromId' (adicionado no Passo 1) para encontrar o Enum.
+            TamanhoPetEnum tamanho = TamanhoPetEnum.fromId(id); 
+            if (tamanho == null) {
+                throw new IOException("ID de TamanhoPet inválido: " + id);
+            }
+            return tamanho;
         }
     }
 }
