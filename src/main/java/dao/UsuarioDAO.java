@@ -33,6 +33,7 @@ public class UsuarioDAO {
 				usuario.setFoto(result.getString("FOTO"));
 				usuario.setAtivo(result.getString("ATIVO"));
 				usuario.setPerfil(new Perfil());
+				usuario.getPerfil().setId(result.getInt("PERFIL_ID"));
 				usuario.getPerfil().setDescricao(result.getString("DESCRICAO"));
 				return usuario;
 			}
