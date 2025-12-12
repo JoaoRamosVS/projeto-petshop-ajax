@@ -4,7 +4,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Petshop - Gerenciar Tutores</title>
+    <title>Gerenciar Tutores</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -87,12 +87,25 @@
             background-color: #f8d7da;
             border-color: #f5c6cb;
         }
+        .btn-new-tutor {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.6em;
+            margin-left: 20px;
+            transition: background-color 0.3s;
+        }
+        .btn-new-tutor:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
 
 <%
-    // Verifica se o usuário está logado e se é Admin (Perfil ID 1)
     Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
 
     if (usuario == null || usuario.getPerfil().getId() != 1) {
@@ -114,7 +127,12 @@
         <i class="fas fa-arrow-left"></i> Voltar ao Painel
     </a>
     
-    <h1>Gerenciamento de Tutores</h1>
+    <h1>
+    	Gerenciamento de Tutores
+    	<a href="<%= request.getContextPath() %>/admin/cadastroTutor.jsp" class="btn-new-tutor">
+            <i class="fas fa-plus"></i> Novo Tutor
+        </a>
+    </h1>
     
     <div id="loadingMessage" style="text-align: center; margin-bottom: 20px;">
         <i class="fas fa-spinner fa-spin"></i> Carregando lista de tutores...
@@ -143,7 +161,6 @@
 <script type="text/javascript">
     $(document).ready(function() {
         
-        // Função para carregar a lista de tutores via AJAX
         function carregarTutores() {
             $('#loadingMessage').show();
             $('#errorMessage').hide();
@@ -159,7 +176,6 @@
                     
                     if (data.length > 0) {
                         $.each(data, function(index, tutor) {
-                            // Cria a linha da tabela com botões de ação
                             var row = '<tr>' +
                                 '<td>' + tutor.id + '</td>' +
                                 '<td>' + tutor.nome + '</td>' +
@@ -200,13 +216,11 @@
         // Adicionar Listeners para os botões (Exemplo de como iniciar a navegação para outras telas)
         $(document).on('click', '.btn-edit', function() {
             var tutorId = $(this).data('id');
-            // Redireciona para a tela de edição (equivalente a EdicaoTutor.java)
             window.location.href = 'edicaoTutor.jsp?id=' + tutorId;
         });
         
         $(document).on('click', '.btn-view', function() {
             var tutorId = $(this).data('id');
-            // Redireciona para uma tela de detalhes/pets
             window.location.href = 'detalhesTutor.jsp?id=' + tutorId;
         });
 

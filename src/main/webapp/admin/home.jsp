@@ -4,7 +4,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Petshop - Administração</title>
+    <title>CentralPet</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -82,7 +82,6 @@
 <body>
 
 <%
-    // Verifica se o usuário está logado e se é Admin (Perfil ID 1)
     Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
 
     if (usuario == null || usuario.getPerfil().getId() != 1) {
@@ -90,7 +89,6 @@
         return;
     }
     
-    // Supondo que você queira obter o email do usuário
     String emailUsuario = usuario.getEmail() != null ? usuario.getEmail() : "Administrador";
 %>
 
@@ -108,26 +106,21 @@
 
     <div class="menu-grid">
         
-        <%-- Corresponde a Gerenciar Usuario --%>
         <a href="<%= request.getContextPath() %>/admin/gerenciarUsuario.jsp" class="menu-item">
             <i class="fas fa-users-cog"></i>
             Gerenciar Usuários
         </a>
         
-        <%-- Corresponde a Gerenciar Tutor --%>
         <a href="<%= request.getContextPath() %>/admin/gerenciarTutor.jsp" class="menu-item">
             <i class="fas fa-user-tag"></i>
             Gerenciar Tutores
         </a>
         
-        <%-- Corresponde a Gerenciar Funcionario --%>
         <a href="<%= request.getContextPath() %>/admin/gerenciarFuncionario.jsp" class="menu-item">
             <i class="fas fa-user-tie"></i>
             Gerenciar Funcionários
         </a>
 
-        <%-- Adicione aqui outros links, como Gerenciar Agendamentos ou Serviços, se houver --%>
-        <%-- Exemplo: Gerenciar Pets (se necessário) --%>
         <a href="<%= request.getContextPath() %>/admin/gerenciarServicos.jsp" class="menu-item">
             <i class="fas fa-cut"></i>
             Gerenciar Serviços
@@ -136,7 +129,6 @@
     </div>
     
     <div class="logout">
-        <%-- O Logout será implementado em um Servlet separado (LogoutController) --%>
         <a href="<%= request.getContextPath() %>/LogoutController" style="color: #dc3545; text-decoration: none; font-weight: bold;">
             <i class="fas fa-sign-out-alt"></i> Sair do Sistema
         </a>
