@@ -1,6 +1,6 @@
 package controllers;
 
-import dao.UsuarioDAO; // Certifique-se de que esta classe está disponível
+import dao.UsuarioDAO;
 import entities.Usuario;
 
 import javax.servlet.ServletException;
@@ -17,12 +17,9 @@ public class LoginServlet extends HttpServlet {
     private UsuarioDAO usuarioDAO;
 
     public LoginServlet() {
-        this.usuarioDAO = new UsuarioDAO(); // Instancia o DAO
+        this.usuarioDAO = new UsuarioDAO(); 
     }
 
-    /**
-     * Recebe e processa as credenciais de login via POST do index.jsp.
-     */
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String email = request.getParameter("email");
         String senha = request.getParameter("senha");

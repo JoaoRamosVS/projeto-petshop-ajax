@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <title>CentralPet</title>
     <style>
-        /* Estilos básicos para centralizar e melhorar a aparência */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -37,7 +36,7 @@
             margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box; /* Garante que padding não aumente a largura total */
+            box-sizing: border-box; 
         }
         button {
             width: 100%;

@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Cadastro Inicial - Novo Tutor e Pet</title>
+    <title>CentralPet</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; }
@@ -145,10 +145,9 @@
 
 <script type="text/javascript">
     $('#cadastroForm').submit(function(e) {
-        e.preventDefault(); // Impede o envio tradicional do formulário
+        e.preventDefault();
         $('#message').removeClass('error-message success-message').text('Processando...');
 
-        // 1. Coleta e estrutura os dados do formulário
         var dadosCadastro = {
             usuario: {
                 email: $('#email').val(),
@@ -167,22 +166,19 @@
             pet: {
                 nome: $('#nomePet').val(),
                 raca: $('#raca').val(),
-                // Converte a data para o formato YYYY-MM-DD esperado pelo seu PetDAO
                 dtNascimento: $('#dtNascimento').val(), 
                 tamanho: { 
                     id: parseInt($('#tamanho').val()) 
                 },
-                // Converte peso para BigDecimal, no Java/JSON como String
                 peso: $('#peso').val() 
             }
         };
 
-        // 2. Chama o Servlet via AJAX
         $.ajax({
-            url: 'TutorController?action=createWithPet', // Action do Servlet para cadastro completo
+            url: 'TutorController?action=createWithPet', 
             type: 'POST',
             contentType: 'application/json',
-            data: JSON.stringify(dadosCadastro), // Envia os dados como JSON
+            data: JSON.stringify(dadosCadastro),
             dataType: 'json',
             success: function(response) {
                 $('#message').text(response.message).addClass('success-message');

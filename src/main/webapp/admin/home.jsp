@@ -82,9 +82,9 @@
 <body>
 
 <%
-    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
-    response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
-    response.setDateHeader("Expires", 0); // Proxies.
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); 
+    response.setHeader("Pragma", "no-cache"); 
+    response.setDateHeader("Expires", 0);
 %>
 
 <%
@@ -130,11 +130,6 @@
         <a href="<%= request.getContextPath() %>/admin/cadastroPet.jsp" class="menu-item">
             <i class="fas fa-paw"></i>
             Cadastrar Novo Pet
-        </a>
-
-        <a href="<%= request.getContextPath() %>/admin/gerenciarServicos.jsp" class="menu-item">
-            <i class="fas fa-cut"></i>
-            Gerenciar Serviços
         </a>
         
     </div>

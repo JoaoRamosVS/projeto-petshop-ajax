@@ -35,7 +35,7 @@ public class TutorServlet extends HttpServlet {
     private TutorDAO tutorDAO = new TutorDAO();
     private Gson gson = new GsonBuilder()
             .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
-            .registerTypeAdapter(TamanhoPetEnum.class, new TamanhoPetEnumTypeAdapter()) // NOVO ADAPTADOR
+            .registerTypeAdapter(TamanhoPetEnum.class, new TamanhoPetEnumTypeAdapter())
             .create();
 
     
@@ -45,9 +45,6 @@ public class TutorServlet extends HttpServlet {
         Pet pet;
     }
 
-    /**
-     * Envia uma resposta JSON de sucesso.
-     */
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
@@ -56,9 +53,6 @@ public class TutorServlet extends HttpServlet {
         out.flush();
     }
 
-    /**
-     * Envia uma resposta JSON de erro com status 500.
-     */
     private void sendErrorResponse(HttpServletResponse response, int statusCode, String message) throws IOException {
         response.setStatus(statusCode);
         response.setContentType("application/json");
@@ -126,10 +120,10 @@ public class TutorServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "createSimple": // Mapeia cadastrarNovoTutor(Tutor tutor, Usuario usuario)
+                case "createSimple": 
                     cadastrarNovoTutor(jsonBody, response);
                     break;
-                case "createWithPet": // Mapeia cadastrarTutorComPet(Tutor tutor, Usuario usuario, Pet pet)
+                case "createWithPet": 
                     cadastrarTutorComPet(jsonBody, response);
                     break;
                 default:
@@ -250,7 +244,6 @@ public class TutorServlet extends HttpServlet {
 
     private void atualizarTutor(String jsonBody, HttpServletResponse response) throws IOException {
         try {
-            // Deserializa o corpo JSON diretamente para um objeto Tutor
             Tutor tutor = gson.fromJson(jsonBody, Tutor.class);
             
             if (tutor == null || tutor.getId() == null) {
@@ -258,7 +251,6 @@ public class TutorServlet extends HttpServlet {
                 return;
             }
 
-            // O método atualizarTutor no DAO espera o ID e os campos de endereço preenchidos
             boolean sucesso = tutorDAO.atualizarTutor(tutor);
             
             if (sucesso) {
@@ -300,7 +292,6 @@ public class TutorServlet extends HttpServlet {
                 out.nullValue();
                 return;
             }
-            // Serializa como objeto JSON, se for necessário em respostas GET
             out.beginObject();
             out.name("id").value(value.getId());
             out.name("descricao").value(value.getDescricao());
@@ -309,26 +300,21 @@ public class TutorServlet extends HttpServlet {
 
         @Override
         public TamanhoPetEnum read(JsonReader in) throws IOException {
-            // Deserializa o JSON {"id": X}
             if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
                 in.nextNull();
                 return null;
             }
             
-            // Lê o objeto JSON token a token
             in.beginObject();
             
-            // Espera o campo "id"
             if (!in.nextName().equals("id")) {
                 throw new IOException("Esperado campo 'id' para TamanhoPetEnum.");
             }
             
-            // Lê o valor do ID
             int id = in.nextInt(); 
             
             in.endObject();
             
-            // Usa o método estático 'fromId' (adicionado no Passo 1) para encontrar o Enum.
             TamanhoPetEnum tamanho = TamanhoPetEnum.fromId(id); 
             if (tamanho == null) {
                 throw new IOException("ID de TamanhoPet inválido: " + id);

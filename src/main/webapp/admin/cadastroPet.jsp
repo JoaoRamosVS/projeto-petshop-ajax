@@ -1,0 +1,313 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page import="entities.Usuario" %>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>CentralPet</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <style>
+        /* Estilos mantidos */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #e9ecef;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        .user-info {
+            text-align: right;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            color: #6c757d;
+        }
+        .btn-back { margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold; display: inline-block; }
+        .btn-back i { margin-right: 5px; }
+
+        .form-section {
+            border: 1px solid #dee2e6;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        .form-section h3 {
+            color: #007bff;
+            margin-top: 0;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .row {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+        }
+        .row > div {
+            flex: 1;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        input[type="text"], input[type="date"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745; 
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button[type="submit"]:hover {
+            background-color: #218838;
+        }
+        .alert { 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border: 1px solid transparent;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .alert-success {
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .alert-error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+
+<%
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
+
+    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
+
+    if (usuario == null || usuario.getPerfil() == null || usuario.getPerfil().getId() != 1) {
+        response.sendRedirect(request.getContextPath() + "/index.jsp");
+        return;
+    }
+    
+    String emailUsuario = usuario.getEmail() != null ? usuario.getEmail() : "Administrador";
+%>
+
+<div class="container">
+    <div class="user-info">
+        Bem-vindo(a), <%= emailUsuario %> 
+        <span style="margin-left: 15px;">|</span>
+        <a href="<%= request.getContextPath() %>/LogoutController" style="color: #dc3545; text-decoration: none;">Sair</a>
+    </div>
+    
+    <a href="<%= request.getContextPath() %>/admin/home.jsp" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Voltar ao Painel
+    </a>
+    
+    <h1>Cadastro de Novo Pet</h1>
+    
+    <div id="loadingMessage" style="text-align: center; margin-bottom: 20px;"><i class="fas fa-spinner fa-spin"></i> Carregando lista de tutores...</div>
+    <div id="statusMessage" class="alert" style="display:none;"></div>
+
+    <form id="cadastroPetForm" style="display:none;">
+        
+        <div class="form-section">
+            <h3><i class="fas fa-user-tag"></i> Proprietário</h3>
+            <div>
+                <label for="tutorId">Selecione o Tutor:</label>
+                <select id="tutorId" required>
+                    <option value="">-- Carregando Tutores --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3><i class="fas fa-paw"></i> Informações do Pet</h3>
+            <div class="row">
+                <div>
+                    <label for="nome">Nome do Pet:</label>
+                    <input type="text" id="nome" required>
+                </div>
+                <div>
+                    <label for="raca">Raça:</label>
+                    <input type="text" id="raca" required>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div>
+                    <label for="dataNascimento">Data de Nascimento:</label>
+                    <input type="date" id="dataNascimento" required>
+                </div>
+                <div>
+                    <label for="peso">Peso (kg):</label>
+                    <input type="number" id="peso" step="0.01" required placeholder="Ex: 5.50"> 
+                </div>
+            </div>
+            
+            <div class="row">
+                <div>
+                    <label for="tamanho">Tamanho:</label>
+                    <select id="tamanho" required>
+                        <option value="">-- Selecione o Tamanho --</option>
+                        <option value="PEQUENO">Pequeno</option>
+                        <option value="MEDIO">Médio</option>
+                        <option value="GRANDE">Grande</option>
+                    </select>
+                </div>
+                <div style="flex: 1;">
+                    </div>
+            </div>
+            
+        </div>
+
+        <button type="submit"><i class="fas fa-save"></i> Cadastrar Pet</button>
+    </form>
+</div>
+
+<script type="text/javascript">
+    const contextPath = '<%= request.getContextPath() %>';
+    
+    $(document).ready(function() {
+        
+        const $loadingMessage = $('#loadingMessage');
+        const $statusMessage = $('#statusMessage');
+        const $form = $('#cadastroPetForm');
+        const $tutorSelect = $('#tutorId');
+
+        function displayMessage(type, message) {
+            $statusMessage.removeClass('alert-success alert-error').addClass('alert-' + type).text(message).show();
+            setTimeout(() => $statusMessage.fadeOut(), 5000);
+        }
+        
+        function carregarTutores() {
+            $tutorSelect.empty().append('<option value="">-- Carregando Tutores --</option>');
+            
+            $.ajax({
+                url: contextPath + '/TutorController', 
+                data: { action: 'listAll' },
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    $tutorSelect.empty();
+                    $tutorSelect.append('<option value="">-- Selecione um Tutor --</option>');
+                    
+                    if (data.length > 0) {
+                        $.each(data, function(index, tutor) {
+                            const idTutor = tutor.id || '';
+                            const nomeTutor = tutor.nome || 'NOME INDISPONÍVEL';
+                            const cpfTutor = tutor.cpf || 'CPF INDISPONÍVEL';
+                            
+                            var optionHtml = '<option value="' + idTutor + '">' 
+                                             + nomeTutor 
+                                             + ' (CPF: ' + cpfTutor + ')' 
+                                             + '</option>';
+                                             
+                            $tutorSelect.append(optionHtml);
+                        });
+                        $form.show();
+                    } else {
+                        $tutorSelect.append('<option value="" disabled>Nenhum tutor ativo encontrado.</option>');
+                        displayMessage('error', 'Nenhum tutor ativo encontrado. Cadastre um tutor primeiro.');
+                    }
+                },
+                error: function(xhr) {
+                    displayMessage('error', 'Erro ao carregar a lista de tutores. Verifique o servidor.');
+                },
+                complete: function() {
+                    $loadingMessage.hide();
+                }
+            });
+        }
+        
+        $form.submit(function(e) {
+            e.preventDefault();
+            $statusMessage.hide();
+            
+            if (!confirm("Confirmar cadastro do novo Pet?")) {
+                return;
+            }
+
+            const tutorIdSelecionado = $('#tutorId').val();
+
+            if (!tutorIdSelecionado) {
+                displayMessage('error', 'Selecione um tutor válido.');
+                return;
+            }
+
+            // ATUALIZAÇÃO: Incluindo o campo 'tamanho' na estrutura de dados
+            var dadosCadastro = {
+                nome: $('#nome').val(),
+                raca: $('#raca').val(),
+                // Novo campo
+                tamanho: $('#tamanho').val(), 
+                // Fim do novo campo
+                dataNascimento: $('#dataNascimento').val(),
+                peso: $('#peso').val(),
+                tutorSelecionado: { 
+                    id: parseInt(tutorIdSelecionado)
+                } 
+            };
+            
+            $.ajax({
+                url: contextPath + '/PetController?action=create', 
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(dadosCadastro),
+                dataType: 'json',
+                success: function(response) {
+                    displayMessage('success', response.message || "Pet cadastrado com sucesso!");
+                    $form[0].reset();
+                },
+                error: function(xhr) {
+                    let errorMsg = "Falha ao cadastrar o Pet.";
+                    try {
+                        const jsonResponse = JSON.parse(xhr.responseText);
+                        errorMsg = jsonResponse.error || errorMsg;
+                    } catch (e) {
+                        errorMsg += " Status: " + xhr.status;
+                    }
+                    displayMessage('error', errorMsg);
+                }
+            });
+        });
+
+        carregarTutores();
+    });
+</script>
+
+</body>
+</html>
