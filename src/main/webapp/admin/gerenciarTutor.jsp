@@ -2,9 +2,6 @@
 <%@ page import="entities.Usuario" %>
 
 <%
-    // =======================================================
-    // 1. PREVENÇÃO DE CACHE E SEGURANÇA
-    // =======================================================
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
@@ -24,13 +21,12 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Petshop - Gerenciar Tutores</title>
+    <title>CentralPet</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
-        /* Estilos baseados no design admin */
         body {
             font-family: Arial, sans-serif;
             background-color: #e9ecef;
@@ -62,7 +58,6 @@
             margin-top: 20px;
             overflow-x: auto;
         }
-        /* Estilos da Tabela */
         #tabelaTutores {
             width: 100%;
             border-collapse: collapse;
@@ -104,14 +99,14 @@
             border: 1px solid transparent;
             border-radius: 4px;
             text-align: center;
-            font-weight: bold; /* Adicionado para destacar a mensagem */
+            font-weight: bold;
         }
         .alert-error {
             color: #721c24;
             background-color: #f8d7da;
             border-color: #f5c6cb;
         }
-        .alert-success { /* Adicionado estilo para sucesso */
+        .alert-success {
             color: #155724;
             background-color: #d4edda;
             border-color: #c3e6cb;
@@ -123,7 +118,7 @@
             border: none;
             border-radius: 5px;
             text-decoration: none;
-            font-size: 0.9em; /* Ajustado para um tamanho legível */
+            font-size: 0.6em;
             transition: background-color 0.3s;
         }
         .btn-new-tutor:hover {
@@ -176,26 +171,22 @@
     </div>
 </div>
 
-<script type="text/javascript">
-    // Define o contexto da aplicação
+<script type="text/javascript">=
     const contextPath = '<%= request.getContextPath() %>';
 
     $(document).ready(function() {
         
-        // Define as variáveis do DOM dentro do ready
         const $loadingMessage = $('#loadingMessage');
         const $statusMessage = $('#statusMessage');
 
-        // Função para exibir mensagens de status (success ou error)
         function displayMessage(type, message) {
             $statusMessage.removeClass('alert-success alert-error').addClass('alert-' + type).text(message).show();
-            // Faz a mensagem desaparecer após 5 segundos
             setTimeout(() => $statusMessage.fadeOut(), 5000);
         }
 
         function carregarTutores() {
             $loadingMessage.show();
-            $statusMessage.hide(); // Oculta mensagens antigas
+            $statusMessage.hide();
             
             $.ajax({
                 url: contextPath + '/TutorController', 
@@ -247,13 +238,11 @@
             });
         }
 
-        // Listener para o botão de Edição (mantido)
         $(document).on('click', '.btn-edit', function() {
             var tutorId = $(this).data('id');
             window.location.href = 'edicaoTutor.jsp?id=' + tutorId;
         });
-        
-        // Listener para o botão de Inativar (mantido)
+
         $(document).on('click', '.btn-inactivate', function() {
             const email = $(this).data('email');
             
@@ -285,7 +274,6 @@
             }
         });
 
-        // Inicia o carregamento da lista
         carregarTutores();
     });
 </script>

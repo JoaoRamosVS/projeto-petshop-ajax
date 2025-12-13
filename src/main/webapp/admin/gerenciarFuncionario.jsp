@@ -8,7 +8,7 @@
 
     Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
 
-    if (usuario == null || usuario.getPerfil().getId() != 1) { // Perfil ID 1 = Admin
+    if (usuario == null || usuario.getPerfil() == null || usuario.getPerfil().getId() != 1) {
         response.sendRedirect(request.getContextPath() + "/index.jsp");
         return;
     }
@@ -88,7 +88,7 @@
             opacity: 0.8;
         }
         .btn-edit { background-color: #ffc107; }
-        .btn-view { background-color: #17a2b8; }
+        .btn-inactivate { background-color: #dc3545; }
         .btn-back { margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold; display: inline-block; }
         .btn-back i { margin-right: 5px; }
         .alert { 
@@ -121,7 +121,7 @@
 
 <div class="container">
     <div class="user-info">
-        Bem-vindo(a), <%= emailUsuario %> (<%= usuario.getPerfil().getId() == 1 ? "ADMIN" : "Outro Perfil" %>)
+        Bem-vindo(a), <%= emailUsuario %> (<%= usuario.getPerfil().getDescricao() %>)
         <span style="margin-left: 15px;">|</span>
         <a href="<%= request.getContextPath() %>/LogoutController" style="color: #dc3545; text-decoration: none;">Sair</a>
     </div>
@@ -141,7 +141,7 @@
         <i class="fas fa-spinner fa-spin"></i> Carregando lista de funcionários...
     </div>
     
-    <div id="errorMessage" class="alert alert-error" style="display:none;"></div>
+    <div id="statusMessage" class="alert" style="display:none;"></div>
 
     <div class="table-responsive">
         <table id="tabelaFuncionarios">
@@ -163,16 +163,25 @@
 </div>
 
 <script type="text/javascript">
+    const contextPath = '<%= request.getContextPath() %>';
+
     $(document).ready(function() {
         
-        // Função para carregar a lista de funcionários via AJAX
+        const $loadingMessage = $('#loadingMessage');
+        const $statusMessage = $('#statusMessage');
+
+        function displayMessage(type, message) {
+            $statusMessage.removeClass('alert-success alert-error').addClass('alert-' + type).text(message).show();
+            setTimeout(() => $statusMessage.fadeOut(), 5000);
+        }
+        
         function carregarFuncionarios() {
-            $('#loadingMessage').show();
-            $('#errorMessage').hide();
+            $loadingMessage.show();
+            $statusMessage.hide();
             
             $.ajax({
-                url: '<%= request.getContextPath() %>/FuncionarioController', 
-                data: { action: 'listAll' }, // Mapeado para listarFuncionarios()
+                url: contextPath + '/FuncionarioController', 
+                data: { action: 'listAll' }, 
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
@@ -181,19 +190,21 @@
                     
                     if (data.length > 0) {
                         $.each(data, function(index, func) {
+                            const emailUsuario = func.usuario ? func.usuario.email : '';
+                            
                             var row = '<tr>' +
                                 '<td>' + func.id + '</td>' +
                                 '<td>' + func.nome + '</td>' +
                                 '<td>' + func.cpf + '</td>' +
                                 '<td>' + (func.cargo || 'N/A') + '</td>' +
                                 '<td>' + (func.telefone || 'N/A') + '</td>' +
-                                '<td>' + (func.usuario ? func.usuario.email : 'N/A') + '</td>' +
+                                '<td>' + (emailUsuario || 'N/A') + '</td>' +
                                 '<td>' +
-                                    '<button class="action-button btn-view" title="Ver Detalhes" data-id="' + func.id + '">' + 
-                                        '<i class="fas fa-eye"></i>' +
-                                    '</button>' +
-                                    '<button class="action-button btn-edit" title="Editar Dados" data-id="' + func.id + '">' + 
-                                        '<i class="fas fa-edit"></i>' +
+                                	'<button class="action-button btn-edit" title="Editar Dados" data-id="' + func.id + '">' + 
+                                		'<i class="fas fa-edit"></i>' +
+                            		'</button>' +
+                                    '<button class="action-button btn-inactivate" title="Inativar Funcionário (e Usuário)" data-email="' + emailUsuario + '">' + 
+                                        '<i class="fas fa-user-slash"></i> Inativar' +
                                     '</button>' +
                                 '</td>' +
                                 '</tr>';
@@ -204,31 +215,57 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    var msg = "Erro ao carregar a lista de funcionários.";
+                    let msg = "Erro ao carregar a lista de funcionários.";
                     try {
-                        var jsonResponse = JSON.parse(xhr.responseText);
+                        const jsonResponse = JSON.parse(xhr.responseText);
                         msg += " Detalhes: " + (jsonResponse.error || xhr.statusText);
                     } catch (e) {
                         msg += " Status: " + xhr.status;
                     }
-                    $('#errorMessage').text(msg).show();
+                    displayMessage('error', msg);
                 },
                 complete: function() {
-                    $('#loadingMessage').hide();
+                    $loadingMessage.hide();
                 }
             });
         }
-
+        
         $(document).on('click', '.btn-edit', function() {
             var funcId = $(this).data('id');
             window.location.href = 'edicaoFuncionario.jsp?id=' + funcId;
         });
-        
-        $(document).on('click', '.btn-view', function() {
-            var funcId = $(this).data('id');
-            window.location.href = 'detalhesFuncionario.jsp?id=' + funcId;
-        });
 
+        $(document).on('click', '.btn-inactivate', function() {
+            const email = $(this).data('email');
+            
+            if (!email) {
+                displayMessage('error', 'E-mail do usuário não encontrado para inativação.');
+                return;
+            }
+
+            if (confirm(`Tem certeza que deseja INATIVAR o funcionário com o e-mail: ${email}? Isso removerá o acesso ao sistema.`)) {
+                $.ajax({
+                    url: contextPath + '/UsuarioController?action=inactivate&email=' + encodeURIComponent(email),
+                    type: 'PUT',
+                    dataType: 'json',
+                    success: function(response) {
+                        displayMessage('success', response.message);
+                        carregarFuncionarios();
+                    },
+                    error: function(xhr) {
+                        let errorMsg = "Falha ao inativar usuário.";
+                        try {
+                            const jsonResponse = JSON.parse(xhr.responseText);
+                            errorMsg = jsonResponse.error || errorMsg;
+                        } catch (e) {
+                            errorMsg += " Status: " + xhr.status;
+                        }
+                        displayMessage('error', errorMsg);
+                    }
+                });
+            }
+        });
+        
         carregarFuncionarios();
     });
 </script>
