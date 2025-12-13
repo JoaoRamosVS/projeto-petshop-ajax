@@ -171,7 +171,7 @@
     </div>
 </div>
 
-<script type="text/javascript">=
+<script type="text/javascript">
     const contextPath = '<%= request.getContextPath() %>';
 
     $(document).ready(function() {
