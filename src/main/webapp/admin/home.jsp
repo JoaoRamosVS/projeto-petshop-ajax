@@ -88,12 +88,12 @@
 %>
 
 <%
-    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
-
-    if (usuario == null || usuario.getPerfil().getId() != 1) {
-        response.sendRedirect(request.getContextPath() + "/index.jsp");
-        return;
-    }
+	Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
+	
+	if (usuario == null || usuario.getPerfil() == null || usuario.getPerfil().getId() != 1) {
+	    response.sendRedirect(request.getContextPath() + "/index.jsp");
+	    return;
+	}
     
     String emailUsuario = usuario.getEmail() != null ? usuario.getEmail() : "Administrador";
 %>
@@ -125,6 +125,11 @@
         <a href="<%= request.getContextPath() %>/admin/gerenciarFuncionario.jsp" class="menu-item">
             <i class="fas fa-user-tie"></i>
             Gerenciar Funcionários
+        </a>
+        
+        <a href="<%= request.getContextPath() %>/admin/cadastroPet.jsp" class="menu-item">
+            <i class="fas fa-paw"></i>
+            Cadastrar Novo Pet
         </a>
 
         <a href="<%= request.getContextPath() %>/admin/gerenciarServicos.jsp" class="menu-item">
