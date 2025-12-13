@@ -1,16 +1,36 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ page import="entities.Usuario" %>
+
+<%
+    // =======================================================
+    // 1. PREVENÇÃO DE CACHE E SEGURANÇA
+    // =======================================================
+    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
+
+    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
+
+    // É necessário ter o objeto Perfil no Usuário, mas se estiver null,
+    // usamos uma verificação mais segura se o getPerfil() retornar null.
+    if (usuario == null || usuario.getPerfil() == null || usuario.getPerfil().getId() != 1) {
+        response.sendRedirect(request.getContextPath() + "/index.jsp");
+        return;
+    }
+    
+    String emailUsuario = usuario.getEmail() != null ? usuario.getEmail() : "Administrador";
+%>
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Gerenciar Tutores</title>
+    <title>Petshop - Gerenciar Tutores</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
-        /* Estilos do HomeAdmin.jsp */
+        /* Estilos baseados no design admin */
         body {
             font-family: Arial, sans-serif;
             background-color: #e9ecef;
@@ -18,7 +38,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 1000px; /* Aumentado para caber a tabela */
+            max-width: 1000px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
@@ -75,7 +95,7 @@
             opacity: 0.8;
         }
         .btn-edit { background-color: #ffc107; }
-        .btn-view { background-color: #17a2b8; }
+        .btn-inactivate { background-color: #dc3545; } 
         .btn-back { margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold; display: inline-block; }
         .btn-back i { margin-right: 5px; }
         .alert { 
@@ -83,11 +103,18 @@
             margin-bottom: 20px; 
             border: 1px solid transparent;
             border-radius: 4px;
+            text-align: center;
+            font-weight: bold; /* Adicionado para destacar a mensagem */
         }
         .alert-error {
             color: #721c24;
             background-color: #f8d7da;
             border-color: #f5c6cb;
+        }
+        .alert-success { /* Adicionado estilo para sucesso */
+            color: #155724;
+            background-color: #d4edda;
+            border-color: #c3e6cb;
         }
         .btn-new-tutor {
             background-color: #28a745;
@@ -96,7 +123,7 @@
             border: none;
             border-radius: 5px;
             text-decoration: none;
-            font-size: 0.6em;
+            font-size: 0.9em; /* Ajustado para um tamanho legível */
             transition: background-color 0.3s;
         }
         .btn-new-tutor:hover {
@@ -106,26 +133,9 @@
 </head>
 <body>
 
-<%
-    response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.
-    response.setHeader("Pragma", "no-cache"); // HTTP 1.0.
-    response.setDateHeader("Expires", 0); // Proxies.
-%>
-
-<%
-    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
-
-    if (usuario == null || usuario.getPerfil().getId() != 1) {
-        response.sendRedirect(request.getContextPath() + "/index.jsp");
-        return;
-    }
-    
-    String emailUsuario = usuario.getEmail() != null ? usuario.getEmail() : "Administrador";
-%>
-
 <div class="container">
     <div class="user-info">
-        Bem-vindo(a), <%= emailUsuario %> (<%= usuario.getPerfil().getId() == 1 ? "ADMIN" : "Outro Perfil" %>)
+        Bem-vindo(a), <%= emailUsuario %> (<%= usuario.getPerfil().getDescricao() %>)
         <span style="margin-left: 15px;">|</span>
         <a href="<%= request.getContextPath() %>/LogoutController" style="color: #dc3545; text-decoration: none;">Sair</a>
     </div>
@@ -145,7 +155,8 @@
         <i class="fas fa-spinner fa-spin"></i> Carregando lista de tutores...
     </div>
     
-    <div id="errorMessage" class="alert alert-error" style="display:none;"></div>
+    <%-- CORRIGIDO: Usaremos um único ID para mensagens de status --%>
+    <div id="statusMessage" class="alert" style="display:none;"></div>
 
     <div class="table-responsive">
         <table id="tabelaTutores">
@@ -166,14 +177,28 @@
 </div>
 
 <script type="text/javascript">
+    // Define o contexto da aplicação
+    const contextPath = '<%= request.getContextPath() %>';
+
     $(document).ready(function() {
         
+        // Define as variáveis do DOM dentro do ready
+        const $loadingMessage = $('#loadingMessage');
+        const $statusMessage = $('#statusMessage');
+
+        // Função para exibir mensagens de status (success ou error)
+        function displayMessage(type, message) {
+            $statusMessage.removeClass('alert-success alert-error').addClass('alert-' + type).text(message).show();
+            // Faz a mensagem desaparecer após 5 segundos
+            setTimeout(() => $statusMessage.fadeOut(), 5000);
+        }
+
         function carregarTutores() {
-            $('#loadingMessage').show();
-            $('#errorMessage').hide();
+            $loadingMessage.show();
+            $statusMessage.hide(); // Oculta mensagens antigas
             
             $.ajax({
-                url: '<%= request.getContextPath() %>/TutorController', 
+                url: contextPath + '/TutorController', 
                 data: { action: 'listAll' },
                 type: 'GET',
                 dataType: 'json',
@@ -183,19 +208,21 @@
                     
                     if (data.length > 0) {
                         $.each(data, function(index, tutor) {
+                            const emailUsuario = tutor.usuario ? tutor.usuario.email : '';
+                            
                             var row = '<tr>' +
                                 '<td>' + tutor.id + '</td>' +
                                 '<td>' + tutor.nome + '</td>' +
                                 '<td>' + tutor.cpf + '</td>' +
                                 '<td>' + (tutor.telefone || 'N/A') + '</td>' +
-                                '<td>' + (tutor.usuario ? tutor.usuario.email : 'N/A') + '</td>' +
+                                '<td>' + (emailUsuario || 'N/A') + '</td>' +
                                 '<td>' +
-                                    '<button class="action-button btn-view" title="Detalhes/Pets" data-id="' + tutor.id + '">' + 
-                                        '<i class="fas fa-eye"></i>' +
-                                    '</button>' +
-                                    '<button class="action-button btn-edit" title="Editar Dados" data-id="' + tutor.id + '">' + 
-                                        '<i class="fas fa-edit"></i>' +
-                                    '</button>' +
+                                	'<button class="action-button btn-edit" title="Editar Dados" data-id="' + tutor.id + '">' + 
+                                    	'<i class="fas fa-edit"></i>' +
+                                	'</button>' +
+                                    '<button class="action-button btn-inactivate" title="Inativar Tutor (e Usuário)" data-email="' + emailUsuario + '">' + 
+                                    	'<i class="fas fa-user-slash"></i> Inativar' +
+                                	'</button>' +
                                 '</td>' +
                                 '</tr>';
                             tabelaBody.append(row);
@@ -205,33 +232,60 @@
                     }
                 },
                 error: function(xhr, status, error) {
-                    var msg = "Erro ao carregar a lista de tutores.";
+                    let msg = "Erro ao carregar a lista de tutores.";
                     try {
-                        var jsonResponse = JSON.parse(xhr.responseText);
+                        const jsonResponse = JSON.parse(xhr.responseText);
                         msg += " Detalhes: " + (jsonResponse.error || xhr.statusText);
                     } catch (e) {
                         msg += " Status: " + xhr.status;
                     }
-                    $('#errorMessage').text(msg).show();
+                    displayMessage('error', msg);
                 },
                 complete: function() {
-                    $('#loadingMessage').hide();
+                    $loadingMessage.hide();
                 }
             });
         }
 
-        // Adicionar Listeners para os botões (Exemplo de como iniciar a navegação para outras telas)
+        // Listener para o botão de Edição (mantido)
         $(document).on('click', '.btn-edit', function() {
             var tutorId = $(this).data('id');
             window.location.href = 'edicaoTutor.jsp?id=' + tutorId;
         });
         
-        $(document).on('click', '.btn-view', function() {
-            var tutorId = $(this).data('id');
-            window.location.href = 'detalhesTutor.jsp?id=' + tutorId;
+        // Listener para o botão de Inativar (mantido)
+        $(document).on('click', '.btn-inactivate', function() {
+            const email = $(this).data('email');
+            
+            if (!email) {
+                displayMessage('error', 'E-mail do usuário não encontrado para inativação.');
+                return;
+            }
+
+            if (confirm(`Tem certeza que deseja INATIVAR o tutor com o e-mail: ${email}? Isso removerá o acesso ao sistema.`)) {
+                $.ajax({
+                    url: contextPath + '/UsuarioController?action=inactivate&email=' + encodeURIComponent(email),
+                    type: 'PUT',
+                    dataType: 'json',
+                    success: function(response) {
+                        displayMessage('success', response.message);
+                        carregarTutores();
+                    },
+                    error: function(xhr) {
+                        let errorMsg = "Falha ao inativar usuário.";
+                        try {
+                            const jsonResponse = JSON.parse(xhr.responseText);
+                            errorMsg = jsonResponse.error || xhr.statusText;
+                        } catch (e) {
+                            errorMsg += " Status: " + xhr.status;
+                        }
+                        displayMessage('error', errorMsg);
+                    }
+                });
+            }
         });
 
-        // Chama a função ao carregar a página
+        // Inicia o carregamento da lista
         carregarTutores();
     });
 </script>
