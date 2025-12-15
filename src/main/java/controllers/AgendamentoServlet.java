@@ -5,7 +5,8 @@ import dao.AgendamentoDAO;
 import entities.Agendamento; 
 import entities.Pet; 
 import entities.Funcionario; 
-import entities.Servico; 
+import entities.Servico;
+import entities.Usuario;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 @WebServlet("/AgendamentoController")
@@ -29,6 +31,7 @@ public class AgendamentoServlet extends HttpServlet {
     private Gson gson = new Gson();
     
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+    private static final DateTimeFormatter TIME_KEY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
 
     private static class AgendamentoDTO {
         Integer id;
@@ -36,6 +39,7 @@ public class AgendamentoServlet extends HttpServlet {
         Integer petId;
         Integer funcionarioId;
         Integer servicoId;
+        Integer criadorId;
         String status;
     }
 
@@ -194,12 +198,28 @@ public class AgendamentoServlet extends HttpServlet {
             return;
         }
         
-        LocalDate date = LocalDate.parse(dataParam);
-        int funcionarioId = Integer.parseInt(funcionarioIdParam);
-        
-        Map<String, String> horariosOcupados = (Map<String, String>) agendamentoDAO.getHorariosOcupadosPorDiaEFuncionario(date, funcionarioId);
-        
-        sendJsonResponse(response, horariosOcupados);
+        try {
+            int funcionarioId = Integer.parseInt(funcionarioIdParam);
+            LocalDate date = LocalDate.parse(dataParam);
+            
+            List<Timestamp> timestampsOcupados = agendamentoDAO.getHorariosOcupadosPorDiaEFuncionario(date, funcionarioId);
+            
+            Map<String, String> horariosOcupadosMap = new HashMap<>();
+            
+            for (Timestamp ts : timestampsOcupados) {
+                LocalDateTime ldt = ts.toLocalDateTime();
+                String key = ldt.format(TIME_KEY_FORMATTER);
+                
+                horariosOcupadosMap.put(key, "OCUPADO"); 
+            }
+            
+            sendJsonResponse(response, horariosOcupadosMap);
+
+        } catch (NumberFormatException e) {
+             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "ID de funcionário inválido.");
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao processar horários ocupados: " + e.getMessage());
+        }
     }
 
     private void cadastrarAgendamento(String jsonBody, HttpServletResponse response) throws IOException {
@@ -220,7 +240,8 @@ public class AgendamentoServlet extends HttpServlet {
             agendamento.setPet(new Pet(dto.petId));
             agendamento.setServico(new Servico(dto.servicoId));
             agendamento.setFuncionario(dto.funcionarioId != null ? new Funcionario(dto.funcionarioId) : null);
-            agendamento.setStatus(dto.status != null ? dto.status : "PENDENTE"); 
+            agendamento.setStatus(dto.status != null ? dto.status : "PENDENTE");
+            agendamento.setCriador(new Usuario(dto.criadorId));
             
             boolean sucesso = agendamentoDAO.agendarServico(agendamento);
             
