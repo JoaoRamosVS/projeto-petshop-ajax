@@ -121,7 +121,7 @@
             Meus Pets
         </a>
         
-        <a href="<%= request.getContextPath() %>/tutor/agendarServico.jsp" class="menu-item">
+        <a href="<%= request.getContextPath() %>/tutor/agendamentoServico.jsp" class="menu-item">
             <i class="fas fa-calendar-plus"></i>
             Agendar Serviço
         </a>
@@ -129,11 +129,6 @@
         <a href="<%= request.getContextPath() %>/tutor/gerenciarAgendaTutor.jsp" class="menu-item">
             <i class="fas fa-clipboard-list"></i>
             Minha Agenda
-        </a>
-        
-        <a href="<%= request.getContextPath() %>/tutor/edicaoPerfilTutor.jsp?userId=<%= usuarioId %>" class="menu-item">
-            <i class="fas fa-user-edit"></i>
-            Editar Perfil
         </a>
         
     </div>

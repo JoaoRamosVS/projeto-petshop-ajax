@@ -36,6 +36,10 @@ public class Funcionario {
 		this.usuario = usuario;
 	}
 
+	public Funcionario(Integer id) {
+		this.id = id;
+	}
+
 	public Integer getId() {
 		return id;
 	}

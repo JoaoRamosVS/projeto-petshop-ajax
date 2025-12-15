@@ -32,6 +32,10 @@ public class Pet {
     	
     }
 
+	public Pet(Integer id) {
+		this.id = id;
+	}
+
 	public Integer getId() {
 		return id;
 	}
