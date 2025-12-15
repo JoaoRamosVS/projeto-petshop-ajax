@@ -1,5 +1,7 @@
 package entities;
 
+import java.sql.Timestamp;
+
 public class Usuario {
 	private Integer id;
     private String email;
@@ -7,6 +9,8 @@ public class Usuario {
     private String foto;
     private String ativo; // 'S' ou 'N'
     private Perfil perfil;
+    private String codigo2FA; 
+    private Timestamp expiracao2FA;
 
     public Usuario(Integer id, String email, String senha, String foto, String ativo, Perfil perfil) {
         this.id = id;
@@ -70,4 +74,20 @@ public class Usuario {
 	public void setPerfil(Perfil perfil) {
 		this.perfil = perfil;
 	}
+	
+	public String getCodigo2FA() {
+        return codigo2FA;
+    }
+
+    public void setCodigo2FA(String codigo2FA) {
+        this.codigo2FA = codigo2FA;
+    }
+
+    public Timestamp getExpiracao2FA() {
+        return expiracao2FA;
+    }
+
+    public void setExpiracao2FA(Timestamp expiracao2FA) {
+        this.expiracao2FA = expiracao2FA;
+    }
 }

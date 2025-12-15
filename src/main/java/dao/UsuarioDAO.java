@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -222,5 +223,60 @@ public class UsuarioDAO {
 	        }
 	        return false;
 	    }
+	}
+	
+	public boolean salvarCodigo2FA(int idUsuario, String codigo, Timestamp expiracao) {
+	    String sql = "UPDATE TB_USUARIOS SET CODIGO_2FA = ?, EXPIRACAO_2FA = ? WHERE ID = ?";
+	    try (DBConnection db = new DBConnection();
+	         Connection conn = db.getConnection();
+	         PreparedStatement ps = conn.prepareStatement(sql)) {
+	        
+	        ps.setString(1, codigo);
+	        ps.setTimestamp(2, expiracao);
+	        ps.setInt(3, idUsuario);
+
+	        return ps.executeUpdate() > 0;
+	    } catch (SQLException e) {
+	        System.err.println("Erro ao salvar código 2FA: " + e.getMessage());
+	        e.printStackTrace();
+	        return false;
+	    }
+	}
+
+	public Usuario verificarEValidarCodigo2FA(int idUsuario, String codigo) {
+	    Usuario usuario = null;
+	    String sqlSelect = "SELECT * FROM TB_USUARIOS INNER JOIN TB_PERFIS ON TB_USUARIOS.PERFIL_ID = TB_PERFIS.ID WHERE TB_USUARIOS.ID = ? AND TB_USUARIOS.CODIGO_2FA = ? AND TB_USUARIOS.EXPIRACAO_2FA > NOW()";
+	    String sqlClear = "UPDATE TB_USUARIOS SET CODIGO_2FA = NULL, EXPIRACAO_2FA = NULL WHERE ID = ?";
+
+	    try (DBConnection db = new DBConnection();
+	         Connection conn = db.getConnection()) {
+	        
+	        try (PreparedStatement psSelect = conn.prepareStatement(sqlSelect)) {
+	            psSelect.setInt(1, idUsuario);
+	            psSelect.setString(2, codigo);
+	            ResultSet rs = psSelect.executeQuery();
+
+	            if (rs.next()) {
+	                usuario = new Usuario();
+	                usuario.setId(rs.getInt("ID"));
+	                usuario.setEmail(rs.getString("EMAIL"));
+	                usuario.setSenha(rs.getString("SENHA"));
+	                usuario.setFoto(rs.getString("FOTO"));
+	                usuario.setAtivo(rs.getString("ATIVO"));
+	                usuario.setPerfil(new Perfil());
+	                usuario.getPerfil().setId(rs.getInt("PERFIL_ID"));
+	                usuario.getPerfil().setDescricao(rs.getString("DESCRICAO"));
+
+	                try (PreparedStatement psClear = conn.prepareStatement(sqlClear)) {
+	                    psClear.setInt(1, idUsuario);
+	                    psClear.executeUpdate();
+	                }
+	            }
+	        }
+	    } catch (SQLException e) {
+	        System.err.println("Erro ao validar código 2FA: " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return usuario;
 	}
 }
