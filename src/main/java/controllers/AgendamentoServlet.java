@@ -12,6 +12,8 @@ import entities.Pet;
 import entities.Funcionario; 
 import entities.Servico;
 import entities.Usuario;
+import java.math.BigDecimal;
+import dao.PetDAO;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -54,6 +56,16 @@ public class AgendamentoServlet extends HttpServlet {
     private static class StatusUpdateDTO {
         Integer id;
         String novoStatus;
+    }
+    
+    private static class FullUpdateDTO {
+        Integer agendamentoId;
+        String status;
+
+        Integer petId;
+        String peso; 
+        String obs;
+        String ocorrencias;
     }
 
     private void sendJsonResponse(HttpServletResponse response, Object data) throws IOException {
@@ -106,6 +118,9 @@ public class AgendamentoServlet extends HttpServlet {
                 case "getHorariosOcupados": 
                     getHorariosOcupados(request, response);
                     break;
+                case "getById":
+                    buscarAgendamentoPorId(request, response);
+                    break;    
                 default:
                     sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Ação GET não reconhecida: " + action);
             }
@@ -148,6 +163,9 @@ public class AgendamentoServlet extends HttpServlet {
                 case "updateStatus":
                     atualizarStatusAgendamento(jsonBody, response); 
                     break;
+                case "updateFull": 
+                    atualizarAgendamentoCompleto(jsonBody, response); 
+                    break;    
                 default:
                     sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Ação PUT não reconhecida: " + action);
             }
@@ -229,7 +247,29 @@ public class AgendamentoServlet extends HttpServlet {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro ao processar horários ocupados: " + e.getMessage());
         }
     }
-
+    
+    private void buscarAgendamentoPorId(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String idParam = request.getParameter("id");
+        if (idParam == null) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Parâmetro 'id' ausente.");
+            return;
+        }
+        
+        try {
+            int id = Integer.parseInt(idParam);
+            
+            Agendamento agendamento = agendamentoDAO.buscarAgendamentoPorId(id);
+            
+            if (agendamento != null) {
+                sendJsonResponse(response, agendamento);
+            } else {
+                sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "Agendamento com ID " + id + " não encontrado.");
+            }
+        } catch (NumberFormatException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "ID inválido. Deve ser um número inteiro.");
+        }
+    }
+    
     private void cadastrarAgendamento(String jsonBody, HttpServletResponse response) throws IOException {
         try {
             AgendamentoDTO dto = gson.fromJson(jsonBody, AgendamentoDTO.class);
@@ -283,6 +323,46 @@ public class AgendamentoServlet extends HttpServlet {
             }
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Formato JSON inválido ou erro de processamento na atualização de status: " + e.getMessage());
+        }
+    }
+    
+    private void atualizarAgendamentoCompleto(String jsonBody, HttpServletResponse response) throws IOException {
+        try {
+            FullUpdateDTO dto = gson.fromJson(jsonBody, FullUpdateDTO.class);
+            
+            if (dto == null || dto.agendamentoId == null || dto.petId == null || dto.status == null || dto.peso == null) {
+                sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Dados essenciais (ID, Pet ID, Status e Peso) são obrigatórios.");
+                return;
+            }
+            
+            Pet pet = new Pet();
+            pet.setId(dto.petId);
+            
+            BigDecimal peso = new BigDecimal(dto.peso);
+            pet.setPeso(peso);
+            
+            pet.setObs(dto.obs);
+            pet.setOcorrencias(dto.ocorrencias);
+
+            PetDAO petDAO = new PetDAO();
+            boolean sucessoPet = petDAO.atualizarInfoServico(pet); 
+
+            AgendamentoDAO agendamentoDAO = new AgendamentoDAO();
+            boolean sucessoAgendamento = agendamentoDAO.atualizarStatusAgendamento(dto.agendamentoId, dto.status);
+
+            if (sucessoPet && sucessoAgendamento) {
+                sendJsonResponse(response, new SuccessResponse("Alterações salvas com sucesso!"));
+            } else {
+                String msg = "Ocorreu um erro ao salvar as alterações.";
+                if (!sucessoPet) msg += " Falha ao atualizar dados do Pet.";
+                if (!sucessoAgendamento) msg += " Falha ao atualizar o Status do Agendamento.";
+                sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            }
+
+        } catch (NumberFormatException e) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "O campo 'Peso' deve ser um número válido.");
+        } catch (Exception e) {
+            sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro no processamento da atualização: " + e.getMessage());
         }
     }
     

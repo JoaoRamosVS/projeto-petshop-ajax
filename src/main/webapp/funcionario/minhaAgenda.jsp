@@ -100,6 +100,11 @@
         }
         .btn-concluir:hover { background-color: #1e7e34; }
 
+		.btn-edit { 
+		    background-color: #ffc107; 
+		    color: #333;
+		}
+
         .btn-cancelar { 
             background-color: #dc3545; 
         }
@@ -190,10 +195,16 @@
                 $.each(lista, function(i, ag) {
                     let dataObj = new Date(ag.dataHora || ag.dataAgendamento); 
                     let dataFormatada = dataObj.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }); 
+                    
+                    const podeEditar = ag.status !== 'CONCLUIDO' && ag.status !== 'CANCELADO';
 
                     let statusClass = (ag.status === 'CONCLUIDO') ? 'status-concluido' : 'status-pendente';
                     
                     let botoes = '<button class="btn-info" onclick=\'verDetalhes(' + JSON.stringify(ag) + ')\'>Info</button>';
+                    
+                    if (podeEditar) {
+                    	botoes += '<button class="btn-edit" title="Editar Agendamento" data-id="' + ag.id + '"">Editar</button>';
+                    }
                     
                     if (ag.status === 'AGENDADO') {
                         botoes += '<button class="btn-cancelar" onclick="mudarStatus(' + ag.id + ', \'CANCELADO\')">Cancelar</button>';
@@ -265,6 +276,11 @@
             }
         });
     };
+    
+    $(document).on('click', '.btn-edit', function() {
+        var agendamentoId = $(this).data('id');
+        window.location.href = 'edicaoAgendamento.jsp?id=' + agendamentoId; 
+    });
 </script>
 </body>
 </html>
