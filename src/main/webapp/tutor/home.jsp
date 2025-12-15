@@ -126,7 +126,7 @@
             Agendar Serviço
         </a>
         
-        <a href="<%= request.getContextPath() %>/tutor/gerenciarAgendaTutor.jsp" class="menu-item">
+        <a href="<%= request.getContextPath() %>/tutor/meusAgendamentos.jsp" class="menu-item">
             <i class="fas fa-clipboard-list"></i>
             Minha Agenda
         </a>

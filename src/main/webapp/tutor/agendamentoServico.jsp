@@ -2,16 +2,12 @@
 <%@ page import="entities.Usuario" %>
 
 <%
-    // =======================================================
-    // 1. PREVENÇÃO DE CACHE E SEGURANÇA
-    // =======================================================
     response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
 
     Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
 
-    // Permite acesso se for Tutor (ID 2)
     if (usuario == null || usuario.getPerfil() == null || usuario.getPerfil().getId() != 2) {
         response.sendRedirect(request.getContextPath() + "/index.jsp");
         return;
@@ -24,13 +20,12 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Petshop - Agendar Serviço</title>
+    <title>CentralPet</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
-        /* Estilos baseados no design tutor/admin */
         body {
             font-family: Arial, sans-serif;
             background-color: #e9ecef;
@@ -60,7 +55,6 @@
         .btn-back { margin-bottom: 20px; text-decoration: none; color: #007bff; font-weight: bold; display: inline-block; }
         .btn-back i { margin-right: 5px; }
 
-        /* Estilos do Formulário e Seções */
         .form-section {
             border: 1px solid #dee2e6;
             padding: 20px;
@@ -96,13 +90,12 @@
             box-sizing: border-box;
         }
         
-        /* Estilos do Painel de Horários */
         #horariosDisponiveis {
             border: 1px solid #007bff;
             padding: 15px;
             border-radius: 6px;
             margin-top: 15px;
-            display: none; /* Inicia oculto */
+            display: none; 
         }
         .horarios-grid {
             display: grid;
@@ -118,7 +111,7 @@
             transition: background-color 0.2s;
         }
         .horario-disponivel {
-            background-color: #d4edda; /* Verde claro */
+            background-color: #d4edda; 
             color: #155724;
             border: 1px solid #c3e6cb;
         }
@@ -127,7 +120,7 @@
             color: white;
         }
         .horario-ocupado {
-            background-color: #f8d7da; /* Vermelho claro */
+            background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
             cursor: not-allowed;
@@ -143,7 +136,7 @@
         button[type="submit"] {
             width: 100%;
             padding: 12px;
-            background-color: #28aa9a; /* Cor para Agendar */
+            background-color: #28aa9a; 
             color: white;
             border: none;
             border-radius: 4px;
@@ -246,7 +239,6 @@
     const contextPath = '<%= request.getContextPath() %>';
     const currentUsuarioId = $('#usuarioId').val();
     
-    // Horários base de funcionamento (adapte conforme sua regra de negócio)
     const HORARIOS_BASE = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
     
     const REGRAS_CARGO = {
@@ -268,17 +260,12 @@
         const $horarioSelecionado = $('#horarioSelecionado');
         const $funcionarioSelect = $('#funcionarioId');
 
-        // Variáveis de cache para simplificar o PUT
         let tutorId = null; 
         
         function displayMessage(type, message) {
             $statusMessage.removeClass('alert-success alert-error').addClass('alert-' + type).text(message).show();
             setTimeout(() => $statusMessage.fadeOut(), 7000);
         }
-
-        // =========================================================================
-        // 1. CARREGAMENTO INICIAL
-        // =========================================================================
         
         function inicializarDados() {
 		    const petPromise = carregarPets();
@@ -289,30 +276,24 @@
 		    $form.hide();
 		    $loadingMessage.show();
 		    
-		    // Usamos um bloco then/catch/finally na cadeia de Promise.all
 		    Promise.all([petPromise, servicoPromise, funcionarioPromise, tutorPromise])
 		        .then(([pets, servicos, funcionarios, idTutor]) => {
-		            tutorId = idTutor; // Salva o ID do tutor
+		            tutorId = idTutor; 
 		            $form.show();
 		        })
 		        .catch(error => {
 		            console.error("Erro na inicialização:", error);
-		            // Exibe o erro crítico na tela, mas ainda permite a remoção do loading
 		            displayMessage('error', 'Falha ao carregar dados essenciais: ' + error.message);
 		        })
 		        .finally(() => {
-		            // Este bloco será executado mesmo em caso de falha de carregamento
 		            $loadingMessage.hide();
 		        });
 		}
 		
-		// CORRIGIDO: Corrigindo erro na passagem de parâmetro
 		function buscarTutorId() {
 		    return new Promise((resolve, reject) => {
 		        $.ajax({
 		            url: contextPath + '/TutorController', 
-		            // CORREÇÃO: Mude 'usuarioId' para 'userId' para consistência com outros Servlets, 
-		            // ou garanta que o TutorController aceite 'usuarioId'
 		            data: { action: 'getByUserId', usuarioId: currentUsuarioId }, 
 		            type: 'GET',
 		            dataType: 'json',
@@ -324,7 +305,6 @@
 		                }
 		            },
 		            error: function(xhr, status, error) {
-		                // Rejeita a promessa em caso de erro de comunicação
 		                reject(new Error("Falha ao buscar ID do Tutor. Status: " + xhr.status));
 		            }
 		        });
@@ -349,12 +329,10 @@
 		                    resolve(data);
 		                } else {
 		                    $select.append('<option value="" disabled>Nenhum pet ativo encontrado.</option>');
-		                    // Deve resolver (sucesso), mas com dados vazios
 		                    resolve([]); 
 		                }
 		            },
 		            error: function(xhr, status, error) {
-		                // Rejeita a promessa em caso de erro de comunicação
 		                reject(new Error("Falha ao carregar Pets. Status: " + xhr.status));
 		            }
 		        });
@@ -384,7 +362,6 @@
 		                }
 		            },
 		            error: function(xhr, status, error) {
-		                // Rejeita a promessa em caso de erro de comunicação
 		                reject(new Error("Falha ao carregar Serviços. Status: " + xhr.status));
 		            }
 		        });
@@ -404,7 +381,6 @@
 		                resolve(data);
 		            },
 		            error: function(xhr, status, error) {
-		                // Rejeita a promessa em caso de erro de comunicação
 		                reject(new Error("Falha ao carregar Funcionários. Status: " + xhr.status));
 		            }
 		        });
@@ -417,7 +393,6 @@
             
             filtrarFuncionariosPorServico(nomeServico);
             
-            // Força a atualização da agenda, pois a seleção de funcionário pode ter mudado
             $('#dataAgendamento').trigger('change'); 
         });
         
@@ -501,9 +476,9 @@
             
             HORARIOS_BASE.forEach(horario => {
                 const dateTimeKey = $('#dataAgendamento').val() + 'T' + horario;
-                const status = horariosOcupadosMap[dateTimeKey]; // Verifica se o horário está na lista de ocupados
+                const status = horariosOcupadosMap[dateTimeKey]; 
                 
-                const isOcupado = status && status !== 'CANCELADO'; // Considera ocupado se tiver status diferente de CANCELADO
+                const isOcupado = status && status !== 'CANCELADO'; 
                 
                 let itemClass = 'horario-item';
                 let title = horario;
@@ -525,17 +500,12 @@
                  $('#horariosInfo').text(`Total de ${countDisponivel} horários disponíveis.`);
             }
 
-            // Adicionar listener de clique
             $('.horario-disponivel').click(function() {
                 $('.horario-item').removeClass('horario-selecionado');
                 $(this).addClass('horario-selecionado');
                 $horarioSelecionado.val($(this).data('hora'));
             });
         }
-        
-        // =========================================================================
-        // 3. SUBMISSÃO DO AGENDAMENTO
-        // =========================================================================
         
         $form.submit(function(e) {
             e.preventDefault();
@@ -556,7 +526,6 @@
                 return;
             }
 
-            // Constrói a data/hora no formato ISO 8601 esperado pelo Servlet: YYYY-MM-DDTHH:MM
             const dataHoraCompleta = data + 'T' + horario;
 
             var dadosAgendamento = {

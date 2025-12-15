@@ -1,6 +1,11 @@
 package controllers;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
 import dao.AgendamentoDAO; 
 import entities.Agendamento; 
 import entities.Pet; 
@@ -28,7 +33,10 @@ import java.util.stream.Collectors;
 public class AgendamentoServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private AgendamentoDAO agendamentoDAO = new AgendamentoDAO();
-    private Gson gson = new Gson();
+    private Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeAdapter())
+            .create();
     
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
     private static final DateTimeFormatter TIME_KEY_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
@@ -292,6 +300,47 @@ public class AgendamentoServlet extends HttpServlet {
             sendJsonResponse(response, new SuccessResponse("Agendamento ID " + id + " cancelado com sucesso."));
         } else {
             sendErrorResponse(response, HttpServletResponse.SC_NOT_FOUND, "Falha ao cancelar. Agendamento ID " + id + " não encontrado.");
+        }
+    }
+    
+    private static class LocalDateAdapter extends TypeAdapter<LocalDate> {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        @Override
+        public void write(JsonWriter out, LocalDate value) throws IOException {
+            if (value == null) {
+                out.nullValue();
+            } else {
+                out.value(formatter.format(value));
+            }
+        }
+
+        @Override
+        public LocalDate read(JsonReader in) throws IOException {
+            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            return LocalDate.parse(in.nextString(), formatter);
+        }
+    }
+    
+    public class LocalDateTimeAdapter extends TypeAdapter<LocalDateTime> {
+        private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME; 
+
+        @Override
+        public void write(JsonWriter out, LocalDateTime value) throws IOException {
+            if (value == null) out.nullValue();
+            else out.value(value.format(FORMATTER));
+        }
+
+        @Override
+        public LocalDateTime read(JsonReader in) throws IOException {
+            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            return LocalDateTime.parse(in.nextString(), FORMATTER);
         }
     }
 }
