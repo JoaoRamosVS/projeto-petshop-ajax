@@ -1,6 +1,10 @@
 package controllers;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 import dao.PetDAO; 
 import entities.Pet; 
 import entities.Tutor;
@@ -23,7 +27,11 @@ import java.util.stream.Collectors;
 public class PetServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private PetDAO petDAO = new PetDAO();
-    private Gson gson = new Gson();
+    private Gson gson = new GsonBuilder()
+            .registerTypeAdapter(LocalDate.class, new LocalDateAdapter())
+            .registerTypeAdapter(TamanhoPetEnum.class, new TamanhoPetEnumTypeAdapter())
+            .create();
+
 
     private static class CadastroPetDTO {
         String nome;
@@ -75,7 +83,10 @@ public class PetServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "getByUserId": 
+	            case "getById": 
+	                buscarPetsPorId(request, response);
+	                break;
+            	case "getByUserId": 
                     buscarPetsPorUsuario(request, response);
                     break;
                 case "getByTutorId": 
@@ -123,6 +134,18 @@ public class PetServlet extends HttpServlet {
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Erro na operação PUT (Atualização de Pet): " + e.getMessage());
         }
+    }
+    
+    private void buscarPetsPorId(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String petIdParam = request.getParameter("petId");
+        if (petIdParam == null) {
+            sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Parâmetro 'petId' ausente.");
+            return;
+        }
+        int petId = Integer.parseInt(petIdParam);
+        
+        Pet pet = petDAO.buscarPetPorId(petId);
+        sendJsonResponse(response, pet);
     }
     
     private void buscarPetsPorTutor(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -207,6 +230,66 @@ public class PetServlet extends HttpServlet {
             }
         } catch (Exception e) {
             sendErrorResponse(response, HttpServletResponse.SC_BAD_REQUEST, "Formato JSON inválido ou dados incompletos para atualização: " + e.getMessage());
+        }
+    }
+    
+    private static class LocalDateAdapter extends TypeAdapter<LocalDate> {
+        private final DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+
+        @Override
+        public void write(JsonWriter out, LocalDate value) throws IOException {
+            if (value == null) {
+                out.nullValue();
+            } else {
+                out.value(formatter.format(value));
+            }
+        }
+
+        @Override
+        public LocalDate read(JsonReader in) throws IOException {
+            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            return LocalDate.parse(in.nextString(), formatter);
+        }
+    }
+    
+    private static class TamanhoPetEnumTypeAdapter extends TypeAdapter<TamanhoPetEnum> {
+        @Override
+        public void write(JsonWriter out, TamanhoPetEnum value) throws IOException {
+            if (value == null) {
+                out.nullValue();
+                return;
+            }
+            out.beginObject();
+            out.name("id").value(value.getId());
+            out.name("descricao").value(value.getDescricao());
+            out.endObject();
+        }
+
+        @Override
+        public TamanhoPetEnum read(JsonReader in) throws IOException {
+            if (in.peek() == com.google.gson.stream.JsonToken.NULL) {
+                in.nextNull();
+                return null;
+            }
+            
+            in.beginObject();
+            
+            if (!in.nextName().equals("id")) {
+                throw new IOException("Esperado campo 'id' para TamanhoPetEnum.");
+            }
+            
+            int id = in.nextInt(); 
+            
+            in.endObject();
+            
+            TamanhoPetEnum tamanho = TamanhoPetEnum.fromId(id); 
+            if (tamanho == null) {
+                throw new IOException("ID de TamanhoPet inválido: " + id);
+            }
+            return tamanho;
         }
     }
 }

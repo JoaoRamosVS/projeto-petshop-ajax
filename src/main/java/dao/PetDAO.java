@@ -9,6 +9,8 @@ import java.util.List;
 
 import database.DBConnection;
 import entities.Pet;
+import entities.Tutor;
+import entities.Usuario;
 
 public class PetDAO {
 
@@ -36,6 +38,43 @@ public class PetDAO {
             return false;
         }
     }
+    
+    public Pet buscarPetPorId(int id) {
+	    Pet pet = null;
+	    try (DBConnection db = new DBConnection();
+	         Connection conn = db.getConnection();
+	         PreparedStatement ps = conn.prepareStatement("SELECT P.*, T.NOME AS TUTOR_NOME FROM TB_PETS P JOIN TB_TUTORES T ON P.TUTOR_ID = T.ID WHERE P.ID = ?")) {
+	        ps.setInt(1, id);
+	        ResultSet rs = ps.executeQuery();
+	        if (rs.next()) {
+	            pet = new Pet();
+	            Tutor tutor = new Tutor();
+	            pet.setId(rs.getInt("ID"));
+	            pet.setNome(rs.getString("NOME"));
+	            pet.setRaca(rs.getString("RACA"));
+	            if (rs.getDate("DT_NASCIMENTO") != null) {
+                    pet.setDtNascimento(rs.getDate("DT_NASCIMENTO").toLocalDate());
+                }
+                pet.setPeso(rs.getBigDecimal("PESO"));
+                pet.setObs(rs.getString("OBS"));
+                pet.setOcorrencias(rs.getString("OCORRENCIAS"));
+                
+                int tamanhoId = rs.getInt("TAMANHO");
+                for (enums.TamanhoPetEnum t : enums.TamanhoPetEnum.values()) {
+                    if (t.getId() == tamanhoId) {
+                        pet.setTamanho(t);
+                        break;
+                    }
+                }
+                tutor.setId(rs.getInt("TUTOR_ID"));
+                tutor.setNome(rs.getString("TUTOR_NOME"));
+                pet.setTutor(tutor);
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return pet;
+	}
 
     public List<Pet> listarPetsPorUsuario(int idUsuario) {
         List<Pet> listaPets = new ArrayList<>();

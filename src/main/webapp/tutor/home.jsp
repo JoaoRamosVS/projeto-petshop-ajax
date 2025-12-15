@@ -116,7 +116,7 @@
 
     <div class="menu-grid">
         
-        <a href="<%= request.getContextPath() %>/tutor/gerenciarPetsTutor.jsp" class="menu-item">
+        <a href="<%= request.getContextPath() %>/tutor/gerenciarMeusPets.jsp" class="menu-item">
             <i class="fas fa-paw"></i>
             Meus Pets
         </a>

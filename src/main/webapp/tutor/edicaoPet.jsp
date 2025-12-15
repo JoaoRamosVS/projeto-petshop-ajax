@@ -10,7 +10,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <style>
-        /* Estilos mantidos */
         body {
             font-family: Arial, sans-serif;
             background-color: #e9ecef;
@@ -18,7 +17,7 @@
             padding: 20px;
         }
         .container {
-            max-width: 700px;
+            max-width: 650px;
             margin: 0 auto;
             background-color: white;
             padding: 30px;
@@ -26,7 +25,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         h1 {
-            color: #343a40;
+            color: #007bff;
             text-align: center;
             margin-bottom: 25px;
             font-size: 1.8em;
@@ -67,17 +66,25 @@
             font-weight: bold;
             color: #495057;
         }
-        input[type="text"], input[type="date"], input[type="number"], select {
+        input[type="text"], input[type="email"], input[type="date"], input[type="number"], select, textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ced4da;
             border-radius: 4px;
             box-sizing: border-box;
+            background-color: #fff;
+        }
+        textarea {
+            resize: vertical; 
+            min-height: 80px;
+        }
+        input[readonly] {
+            background-color: #f1f1f1;
         }
         button[type="submit"] {
             width: 100%;
             padding: 12px;
-            background-color: #28a745; 
+            background-color: #007bff;
             color: white;
             border: none;
             border-radius: 4px;
@@ -87,7 +94,7 @@
             transition: background-color 0.3s;
         }
         button[type="submit"]:hover {
-            background-color: #218838;
+            background-color: #0056b3;
         }
         .alert { 
             padding: 15px; 
@@ -116,14 +123,20 @@
     response.setHeader("Pragma", "no-cache");
     response.setDateHeader("Expires", 0);
 
-    Usuario usuario = (Usuario) session.getAttribute("usuarioLogado");
-
-    if (usuario == null || usuario.getPerfil() == null || usuario.getPerfil().getId() != 1) {
+    Usuario usuarioLogado = (Usuario) session.getAttribute("usuarioLogado");
+    String petIdParam = request.getParameter("id");
+    
+    if (usuarioLogado == null || usuarioLogado.getPerfil() == null || usuarioLogado.getPerfil().getId() != 2) { 
         response.sendRedirect(request.getContextPath() + "/index.jsp");
         return;
     }
     
-    String emailUsuario = usuario.getEmail() != null ? usuario.getEmail() : "Administrador";
+    if (petIdParam == null || petIdParam.isEmpty()) {
+        response.sendRedirect(request.getContextPath() + "/tutor/gerenciarMeusPets.jsp");
+        return;
+    }
+
+    String emailUsuario = usuarioLogado.getEmail() != null ? usuarioLogado.getEmail() : "Tutor";
 %>
 
 <div class="container">
@@ -133,120 +146,125 @@
         <a href="<%= request.getContextPath() %>/LogoutController" style="color: #dc3545; text-decoration: none;">Sair</a>
     </div>
     
-    <a href="<%= request.getContextPath() %>/admin/home.jsp" class="btn-back">
-        <i class="fas fa-arrow-left"></i> Voltar ao Painel
+    <a href="<%= request.getContextPath() %>/tutor/gerenciarMeusPets.jsp" class="btn-back">
+        <i class="fas fa-arrow-left"></i> Voltar à Lista de Pets
     </a>
     
-    <h1>Cadastro de Novo Pet</h1>
+    <h1>Edição de Pet (ID: <span id="petIdDisplay"><%= petIdParam %></span>)</h1>
     
-    <div id="loadingMessage" style="text-align: center; margin-bottom: 20px;"><i class="fas fa-spinner fa-spin"></i> Carregando lista de tutores...</div>
+    <div id="loadingMessage" style="text-align: center; margin-bottom: 20px;"><i class="fas fa-spinner fa-spin"></i> Carregando dados do Pet...</div>
     <div id="statusMessage" class="alert" style="display:none;"></div>
 
-    <form id="cadastroPetForm" style="display:none;">
+    <form id="edicaoPetForm" style="display:none;">
         
+        <input type="hidden" id="petId" value="<%= petIdParam %>">
+        
+        <input type="hidden" id="tutorIdHidden"> 
+
         <div class="form-section">
-            <h3><i class="fas fa-user-tag"></i> Proprietário</h3>
-            <div>
-                <label for="tutorId">Selecione o Tutor:</label>
-                <select id="tutorId" required>
-                    <option value="">-- Carregando Tutores --</option>
-                </select>
+            <h3><i class="fas fa-info-circle"></i> Informações Fixas</h3>
+            <div class="row">
+                <div>
+                    <label for="nome">Nome do Pet:</label>
+                    <input type="text" id="nome" readonly>
+                </div>
+                <div>
+                    <label for="raca">Raça:</label>
+                    <input type="text" id="raca" readonly>
+                </div>
+            </div>
+            <div class="row">
+                <div>
+                    <label for="dtNascimento">Data de Nascimento:</label>
+                    <input type="date" id="dtNascimento" readonly>
+                </div>
+                <div>
+                    <label for="tutorNome">Tutor:</label>
+                    <input type="text" id="tutorNome" readonly>
+                </div>
             </div>
         </div>
 
         <div class="form-section">
-            <h3><i class="fas fa-paw"></i> Informações do Pet</h3>
-            <div class="row">
-                <div>
-                    <label for="nome">Nome do Pet:</label>
-                    <input type="text" id="nome" required>
-                </div>
-                <div>
-                    <label for="raca">Raça:</label>
-                    <input type="text" id="raca" required>
-                </div>
-            </div>
-            
-            <div class="row">
-                <div>
-                    <label for="dataNascimento">Data de Nascimento:</label>
-                    <input type="date" id="dataNascimento" required>
-                </div>
-                <div>
-                    <label for="peso">Peso (kg):</label>
-                    <input type="number" id="peso" step="0.01" required placeholder="Ex: 5.50"> 
-                </div>
-            </div>
-            
+            <h3><i class="fas fa-paw"></i> Detalhes Editáveis</h3>
             <div class="row">
                 <div>
                     <label for="tamanho">Tamanho:</label>
                     <select id="tamanho" required>
                         <option value="">-- Selecione o Tamanho --</option>
-                        <option value="MUITO_PEQUENO">Muito pequeno</option>
-                        <option value="PEQUENO">Pequeno</option>
-                        <option value="MEDIO">Médio</option>
-                        <option value="GRANDE">Grande</option>
+                        <option value="1">Muito pequeno</option>
+                        <option value="2">Pequeno</option>
+                        <option value="3">Médio</option>
+                        <option value="4">Grande</option>
                     </select>
                 </div>
-                <div style="flex: 1;">
-                    </div>
+                <div>
+                    <label for="peso">Peso (kg):</label>
+                    <input type="number" id="peso" step="0.01" required placeholder="Ex: 5.50">
+                </div>
             </div>
             
+            <div>
+                <label for="observacoes">Observações (Comportamento, Histórico, Alergias, etc.):</label>
+                <textarea id="observacoes"></textarea>
+            </div>
         </div>
-
-        <button type="submit"><i class="fas fa-save"></i> Cadastrar Pet</button>
+        
+        <button type="submit"><i class="fas fa-sync-alt"></i> Atualizar Detalhes do Pet</button>
     </form>
 </div>
 
 <script type="text/javascript">
     const contextPath = '<%= request.getContextPath() %>';
+    const petId = $('#petId').val();
     
     $(document).ready(function() {
         
         const $loadingMessage = $('#loadingMessage');
         const $statusMessage = $('#statusMessage');
-        const $form = $('#cadastroPetForm');
-        const $tutorSelect = $('#tutorId');
+        const $form = $('#edicaoPetForm');
 
         function displayMessage(type, message) {
             $statusMessage.removeClass('alert-success alert-error').addClass('alert-' + type).text(message).show();
             setTimeout(() => $statusMessage.fadeOut(), 5000);
         }
-        
-        function carregarTutores() {
-            $tutorSelect.empty().append('<option value="">-- Carregando Tutores --</option>');
+
+        function carregarDadosPet() {
+            $loadingMessage.show();
+            $form.hide();
             
             $.ajax({
-                url: contextPath + '/TutorController', 
-                data: { action: 'listAll' },
+                url: contextPath + '/PetController', 
+                data: { action: 'getById', petId: petId },
                 type: 'GET',
                 dataType: 'json',
-                success: function(data) {
-                    $tutorSelect.empty();
-                    $tutorSelect.append('<option value="">-- Selecione um Tutor --</option>');
-                    
-                    if (data.length > 0) {
-                        $.each(data, function(index, tutor) {
-                            const idTutor = tutor.id || '';
-                            const nomeTutor = tutor.nome || 'NOME INDISPONÍVEL';
-                            const cpfTutor = tutor.cpf || 'CPF INDISPONÍVEL';
-                            
-                            var optionHtml = '<option value="' + idTutor + '">' 
-                                             + nomeTutor 
-                                             + ' (CPF: ' + cpfTutor + ')' 
-                                             + '</option>';
-                                             
-                            $tutorSelect.append(optionHtml);
-                        });
+                success: function(pet) {
+                    if (pet) {
+                        $('#nome').val(pet.nome);
+                        $('#raca').val(pet.raca);
+                        $('#dtNascimento').val(pet.dtNascimento); 
+                        $('#tutorNome').val(pet.tutor ? pet.tutor.nome : 'N/A');
+                        
+                        $('#tutorIdHidden').val(pet.tutor ? pet.tutor.id : ''); 
+                        
+                        $('#tamanho').val(pet.tamanho.id);
+                        $('#peso').val(pet.peso);
+                        $('#observacoes').val(pet.obs || ''); 
+                        
                         $form.show();
                     } else {
-                        $tutorSelect.append('<option value="" disabled>Nenhum tutor ativo encontrado.</option>');
-                        displayMessage('error', 'Nenhum tutor ativo encontrado. Cadastre um tutor primeiro.');
+                        displayMessage('error', 'Pet não encontrado com o ID fornecido.');
                     }
                 },
                 error: function(xhr) {
-                    displayMessage('error', 'Erro ao carregar a lista de tutores. Verifique o servidor.');
+                    let msg = "Erro ao carregar os dados do Pet.";
+                    try {
+                        const jsonResponse = JSON.parse(xhr.responseText);
+                        msg += " Detalhes: " + (jsonResponse.error || xhr.statusText);
+                    } catch (e) {
+                        msg += " Status: " + xhr.status;
+                    }
+                    displayMessage('error', msg);
                 },
                 complete: function() {
                     $loadingMessage.hide();
@@ -256,45 +274,47 @@
         
         $form.submit(function(e) {
             e.preventDefault();
-            $statusMessage.hide();
+            $statusMessage.hide(); 
             
-            if (!confirm("Confirmar cadastro do novo Pet?")) {
+            if (!confirm("Confirmar atualização dos dados do Pet?")) {
                 return;
             }
 
-            const tutorIdSelecionado = $('#tutorId').val();
-
-            if (!tutorIdSelecionado) {
-                displayMessage('error', 'Selecione um tutor válido.');
-                return;
-            }
-
-            var dadosCadastro = {
+            var dadosAtualizacao = {
+                id: petId,
+                
                 nome: $('#nome').val(),
                 raca: $('#raca').val(),
-                tamanho: $('#tamanho').val(),
-                dataNascimento: $('#dataNascimento').val(),
-                peso: $('#peso').val(),
-                tutorSelecionado: { 
-                    id: parseInt(tutorIdSelecionado)
-                } 
+                dtNascimento: $('#dtNascimento').val(), 
+                tutor: { 
+                    id: parseInt($('#tutorIdHidden').val()) 
+                },
+                
+                tamanho: { id: $('#tamanho').val() },
+                peso: parseFloat($('#peso').val()),
+                obs: $('#observacoes').val()
             };
             
+            if (isNaN(dadosAtualizacao.tutor.id)) {
+                 displayMessage('error', 'ID do Tutor inválido. Não foi possível salvar.');
+                 return;
+            }
+
             $.ajax({
-                url: contextPath + '/PetController?action=create', 
-                type: 'POST',
+                url: contextPath + '/PetController?action=update',
+                type: 'PUT',
                 contentType: 'application/json',
-                data: JSON.stringify(dadosCadastro),
+                data: JSON.stringify(dadosAtualizacao),
                 dataType: 'json',
                 success: function(response) {
-                    displayMessage('success', response.message || "Pet cadastrado com sucesso!");
-                    $form[0].reset();
+                    displayMessage('success', response.message);
+                    carregarDadosPet(); 
                 },
                 error: function(xhr) {
-                    let errorMsg = "Falha ao cadastrar o Pet.";
+                    let errorMsg = "Falha ao atualizar o Pet.";
                     try {
                         const jsonResponse = JSON.parse(xhr.responseText);
-                        errorMsg = jsonResponse.error || errorMsg;
+                        errorMsg = jsonResponse.error || xhr.statusText;
                     } catch (e) {
                         errorMsg += " Status: " + xhr.status;
                     }
@@ -303,7 +323,7 @@
             });
         });
 
-        carregarTutores();
+        carregarDadosPet();
     });
 </script>
 

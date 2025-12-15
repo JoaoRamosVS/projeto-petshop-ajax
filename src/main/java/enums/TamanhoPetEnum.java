@@ -1,10 +1,10 @@
 package enums;
 
 public enum TamanhoPetEnum {
-	MUITO_PEQUENO(1, "1 - Muito Pequeno"),
-    PEQUENO(2, "2 - Pequeno"),
-    MEDIO(3, "3 - Médio"),
-    GRANDE(4, "4 - Grande");
+	MUITO_PEQUENO(1, "Muito Pequeno"),
+    PEQUENO(2, "Pequeno"),
+    MEDIO(3, "Médio"),
+    GRANDE(4, "Grande");
 
     private final int id;
     private final String descricao;
